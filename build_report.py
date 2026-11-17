@@ -93,11 +93,20 @@ story = [
     p("Independent tests cover separable Boolean data, XOR, majority ties, pruning, "
       "Laplace probability calculations, smallest-k tie selection, odds ranking and "
       "binary enhanced features. The final model reaches the handout's 84% test threshold."),
+    p("Experimental protocol", "H1X"),
+    p("The supplied digit splits were used without reshuffling. Unless a command specifies "
+      "1,000 training images, the harness uses 100 training, 100 validation and 100 test "
+      "images. Hyperparameters and pruning decisions use only validation data. Test data "
+      "is reserved for final evaluation, and accuracy is the fraction of exact label matches."),
     p("2. Question 1: ID3 decision tree", "H1X"),
     p("The learner chooses the remaining binary feature with maximum information gain, "
       "using base-2 entropy and a deterministic majority-label tie break. Pure nodes and "
       "nodes without remaining features become leaves. Zero-gain splits remain available "
       "because a later split can still solve parity-like data such as XOR."),
+    p("For a node S, entropy is H(S) = -sum p(c) log2 p(c). The gain of a feature is the "
+      "parent entropy minus the size-weighted entropy of its two child partitions. Each "
+      "node stores its local majority prediction, providing a deterministic fallback for "
+      "ties and for any path that cannot be followed."),
     p("Reduced-error pruning proceeds bottom-up. For validation examples reaching a node, "
       "its subtree is replaced by the node's majority-label leaf whenever the leaf is at "
       "least as accurate. Test labels are never used for pruning."),
@@ -107,13 +116,21 @@ story = [
     ], [2.45*inch, .85*inch, .75*inch, .75*inch, .75*inch]),
     p("Table 1. Pruning removes 14 of 45 nodes (31%) and improves validation and test "
       "accuracy by two percentage points.", "SmallX"),
+    p("The improvement is modest but consistent with reduced overfitting: the original tree "
+      "fits branches that do not generalize from only 100 training examples. Replacing "
+      "validation-neutral subtrees on ties also deliberately favors the simpler model."),
     p("python3 dataClassifier.py -c id3 -d digits<br/>"
       "python3 dataClassifier.py -c id3 -d digits -p", "CodeX"),
+    PageBreak(),
     p("3. Question 2: Naive Bayes", "H1X"),
     p("Class priors are empirical frequencies and are not smoothed. For each binary "
       "feature f and label y, P(f=1|y) = (count(f=1,y)+k)/(count(y)+2k). Counts are "
       "collected once and reused for every candidate k. Classification sums log P(y) "
       "and the log conditional probability of every present or absent feature."),
+    p("Log probabilities avoid the numerical underflow caused by multiplying hundreds of "
+      "small pixel probabilities. Automatic tuning evaluates k in {0.001, 0.01, 0.05, "
+      "0.1, 0.5, 1, 5, 10, 20, 50}. Each candidate is scored on validation data; a tie "
+      "selects the smaller k exactly as required."),
     result_table(["Configuration", "Training", "Validation", "Test", "Selected k"], [
         ["Fixed-k Naive Bayes", "100", "69%", "55%", "2"],
         ["Autotuned Naive Bayes", "100", "74%", "65%", "0.1"],
@@ -125,26 +142,42 @@ story = [
     p("The 74% validation and 65% test results match the handout's reference values. "
       "Naive Bayes assumes conditional independence even though neighboring pixels and "
       "shape features are correlated; many weak image cues still combine effectively."),
+    p("Relative to fixed k=2, autotuning gains five validation points and ten test points. "
+      "With 1,000 examples, the selected k falls from 0.1 to 0.001 because the conditional "
+      "estimates are less sparse. The remaining validation-test gap on the 100-example run "
+      "illustrates the uncertainty created by a small sample and a finite validation set."),
     p("python3 dataClassifier.py -c naiveBayes -k 2<br/>"
       "python3 dataClassifier.py -c naiveBayes --autotune", "CodeX"),
-    PageBreak(),
     p("4. Question 3: Odds ratios", "H1X"),
     p("Features are ranked by P(f=1|label 3) / P(f=1|label 6), and the top 100 are "
       "returned. The measured pattern matches handout choice <b>(a)</b>. Because the "
       "handout names q2 while the starter file contains q3, both functions return "
       "<font name='Courier'>'a'</font>."),
+    p("The selected pixels concentrate in regions more typical of a 3, especially portions "
+      "of its upper and lower right-hand strokes, relative to the stronger left side and "
+      "closed lower loop of a 6. Sorting uses a deterministic secondary ordering for exact "
+      "ties and returns exactly 100 learned features."),
     p("python3 dataClassifier.py -a -d digits -c naiveBayes -o -1 3 -2 6", "CodeX"),
     p("5. Question 4: Enhanced digit features", "H1X"),
     p("Every added feature is binary. Multi-valued properties use one-hot or cumulative "
       "threshold encodings. The extractor adds component and hole counts, total and "
       "regional ink densities, bounding-box aspect, symmetry, 4 x 4 zone densities, "
       "center-of-mass thresholds and scan-line crossing thresholds."),
+    p("Component and hole features encode topology; a loop changes the number of enclosed "
+      "background regions. Bounding-box, density and center-of-mass features summarize "
+      "global size and balance. Zone densities retain coarse spatial location, while scan-line "
+      "crossings distinguish open strokes from repeated boundaries. All 904 output values "
+      "were checked to be binary on 1,000 training images."),
     result_table(["Feature set", "Validation", "Test", "Test gain"], [
         ["Basic pixels", "82%", "78%", "-"],
         ["Pixels plus enhanced features", "85%", "84%", "+6 points"],
     ], [3.0*inch, .9*inch, .8*inch, 1.05*inch]),
     p("Table 3. Enhanced features meet the handout's full 84% test threshold. Topology, "
       "balance and stroke-transition summaries resist small writing shifts.", "SmallX"),
+    p("The six-point test improvement is larger than the three-point validation gain. This "
+      "does not imply that test data influenced feature construction or tuning; it reflects "
+      "sampling variation between the supplied 100-image validation and test subsets. The "
+      "important comparison is that the same trained pipeline improves both splits."),
     p("python3 dataClassifier.py -d digits -c naiveBayes -f -a -t 1000", "CodeX"),
     p("6. Verification results", "H1X"),
     result_table(["Check", "Result", "Evidence"], [
@@ -157,10 +190,23 @@ story = [
         ["Submission archive", "PASS", "Fresh extraction and CRC verification"],
     ], [2.0*inch, .70*inch, 3.35*inch]),
     p("Table 4. Independent checks and fresh-package runs against the final archive.", "SmallX"),
+    p("The archive contains the complete original project package and extracted datasets. "
+      "Exactly the four designated Python files differ from the original package; all other "
+      "starter sources, data.zip and minicontest_output.pickle are byte-identical. The ZIP "
+      "contains no report, build script, temporary output, cache directory or .DS_Store file."),
+    p("7. Conclusions", "H1X"),
     p("ID3 exposes feature interactions but is sensitive to the small training sample; "
       "validation-guided pruning makes it smaller and slightly more accurate. Naive Bayes "
       "is stronger for this image task. Compact shape summaries add information that raw "
       "pixel identity alone misses."),
+    p("The experiments support the project's central lesson: classifier choice matters, but "
+      "representation quality can matter more. The Bernoulli pixel model rises from 78% to "
+      "84% test accuracy when supplied with a small collection of topology and shape cues, "
+      "without changing the learning algorithm."),
+    p("Reference", "H1X"),
+    p("CSE 537 Project 4: Classification handout, Fall 2026. The decision-tree learner "
+      "follows the information-gain formulation in Tom M. Mitchell, <i>Machine Learning</i>, "
+      "Chapter 3 (1997).", "SmallX"),
 ]
 
 doc.build(story)
